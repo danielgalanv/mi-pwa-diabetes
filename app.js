@@ -196,11 +196,9 @@ function formatTime(ts) {
 }
 
 async function fetchNightscout() {
-  const res = await fetch(`${NIGHTSCOUT_URL}/api/v1/entries.json?count=1`, {
-    headers: {
-      "api-secret": API_SECRET
-    }
-  });
+  const url = `${NIGHTSCOUT_URL}/api/v1/entries.json?count=1&token=${API_SECRET}`;
+
+  const res = await fetch(url);
 
   if (!res.ok) {
     throw new Error(`Error ${res.status}`);
