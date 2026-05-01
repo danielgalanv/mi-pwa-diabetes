@@ -151,3 +151,44 @@ select {
 .hidden {
   display: none;
 }
+
+
+/* --- Nightscout --- */
+
+.glucose-live-box {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.glucose-value {
+  font-size: 4rem;
+  font-weight: 800;
+}
+
+.trend {
+  font-size: 2.5rem;
+  margin: 0.5rem 0;
+}
+
+.updated {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Colores por rango */
+
+.ns-ok {
+  color: #16a34a;
+}
+
+.ns-warning {
+  color: #eab308;
+}
+
+.ns-danger {
+  color: #dc2626;
+}
+
+.ns-unknown {
+  color: #6b7280;
+}

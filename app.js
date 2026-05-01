@@ -153,4 +153,105 @@ calculateBtn.addEventListener("click", () => {
   `;
 });
 
+
+/* =========================
+   NIGHTSCOUT INTEGRACIÓN
+========================= */
+
+const NIGHTSCOUT_URL = "https://nightscout.intelligentcontrol.net";
+const API_SECRET = "MiNightscoutSeguro2026!"; 
+
+const nsGlucose = document.getElementById("nsGlucose");
+const nsTrend = document.getElementById("nsTrend");
+const nsUpdated = document.getElementById("nsUpdated");
+const refreshBtn = document.getElementById("refreshNightscoutBtn");
+
+const TREND_MAP = {
+  DoubleUp: "↑↑",
+  SingleUp: "↑",
+  FortyFiveUp: "↗",
+  Flat: "→",
+  FortyFiveDown: "↘",
+  SingleDown: "↓",
+  DoubleDown: "↓↓",
+  "NOT COMPUTABLE": "?",
+  "RATE OUT OF RANGE": "?"
+};
+
+function getColorClass(glucose) {
+  if (!glucose) return "ns-unknown";
+
+  if (glucose < 70 || glucose > 180) return "ns-danger";
+  if (glucose < 80 || glucose > 140) return "ns-warning";
+
+  return "ns-ok";
+}
+
+function formatTime(ts) {
+  const d = new Date(ts);
+  return d.toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+async function fetchNightscout() {
+  const res = await fetch(`${NIGHTSCOUT_URL}/api/v1/entries.json?count=1`, {
+    headers: {
+      "api-secret": API_SECRET
+    }
+  });
+
+  if (!res.ok) {
+    throw new Error(`Error ${res.status}`);
+  }
+
+  const data = await res.json();
+
+  if (!data.length) {
+    throw new Error("Sin datos");
+  }
+
+  return data[0];
+}
+
+async function updateNightscout() {
+  try {
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = "Actualizando...";
+
+    const entry = await fetchNightscout();
+
+    const glucose = entry.sgv;
+    const trend = entry.direction;
+
+    nsGlucose.textContent = glucose;
+    nsTrend.textContent = TREND_MAP[trend] || "?";
+    nsUpdated.textContent = `Actualizado ${formatTime(entry.date)}`;
+
+    nsGlucose.className = `glucose-value ${getColorClass(glucose)}`;
+  } catch (e) {
+    console.error(e);
+
+    nsGlucose.textContent = "--";
+    nsTrend.textContent = "!";
+    nsUpdated.textContent = "Error al obtener datos";
+
+    nsGlucose.className = "glucose-value ns-unknown";
+  } finally {
+    refreshBtn.disabled = false;
+    refreshBtn.textContent = "Actualizar datos";
+  }
+}
+
+if (refreshBtn) {
+  refreshBtn.addEventListener("click", updateNightscout);
+}
+
+/* Auto-refresh cada 60s */
+setInterval(updateNightscout, 60000);
+
+/* Primera carga */
+updateNightscout();
+
 initializeApp();

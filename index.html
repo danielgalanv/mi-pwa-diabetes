@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Calculadora Fiasp</title>
   <link rel="stylesheet" href="style.css" />
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#111827">
 </head>
 <body>
   <main class="app">
@@ -15,6 +18,7 @@
 
     <nav class="tabs">
       <button class="tab active" data-tab="calculo">Cálculo</button>
+      <button class="tab" data-tab="nightscout">Nightscout</button>
       <button class="tab" data-tab="formula">Fórmula</button>
       <button class="tab" data-tab="perfil">Perfil</button>
     </nav>
@@ -38,6 +42,31 @@
       <button id="calculateBtn" class="primary">Calcular dosis</button>
 
       <div id="result" class="result hidden"></div>
+    </section>
+
+    <section id="nightscout" class="tab-content">
+      <h2>Datos de Nightscout</h2>
+
+      <div class="card">
+        <div class="glucose-live-box">
+          <div class="glucose-value">
+            <span id="nsGlucose">--</span>
+            <span class="unit">mg/dL</span>
+          </div>
+
+          <div class="trend">
+            <span id="nsTrend">--</span>
+          </div>
+
+          <div class="updated">
+            <span id="nsUpdated">Sin datos</span>
+          </div>
+        </div>
+
+        <button id="refreshNightscoutBtn" class="primary">
+          Actualizar datos
+        </button>
+      </div>
     </section>
 
     <section id="formula" class="tab-content">
