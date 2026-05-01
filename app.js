@@ -159,7 +159,7 @@ calculateBtn.addEventListener("click", () => {
 ========================= */
 
 const NIGHTSCOUT_URL = "https://nightscout.intelligentcontrol.net";
-const API_SECRET = "MiNightscoutSeguro2026!"; 
+const NIGHTSCOUT_TOKEN  = "pwa-4e1254ecc39de4c2"; 
 
 const nsGlucose = document.getElementById("nsGlucose");
 const nsTrend = document.getElementById("nsTrend");
@@ -196,7 +196,7 @@ function formatTime(ts) {
 }
 
 async function fetchNightscout() {
-  const url = `${NIGHTSCOUT_URL}/api/v1/entries.json?count=1&token=${API_SECRET}`;
+  const url = `${NIGHTSCOUT_URL}/api/v1/entries.json?count=1&token=${NIGHTSCOUT_TOKEN}`;
 
   const res = await fetch(url);
 
