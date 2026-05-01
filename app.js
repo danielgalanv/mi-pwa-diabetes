@@ -159,7 +159,7 @@ calculateBtn.addEventListener("click", () => {
 ========================= */
 
 const NIGHTSCOUT_URL = "https://nightscout.intelligentcontrol.net";
-const NIGHTSCOUT_TOKEN  = "pwa-4e1254ecc39de4c2"; 
+const NIGHTSCOUT_TOKEN  = "	pwa-ebac7edf2b778ff6"; 
 
 const nsGlucose = document.getElementById("nsGlucose");
 const nsTrend = document.getElementById("nsTrend");
