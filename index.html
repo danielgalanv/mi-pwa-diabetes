@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <link rel="manifest" href="./manifest.json">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <meta charset="UTF-8">
+  <title>Mi PWA Diabetes</title>
+</head>
+<body>
+  <h1>Hola mundo</h1>
+  <p>Mi primera aplicación web para iPhone.</p>
+
+  <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./service-worker.js")
+      .then(() => console.log("Service Worker registrado"))
+      .catch(error => console.error("Error registrando Service Worker:", error));
+  }
+</script>
+</body>
+</html>
