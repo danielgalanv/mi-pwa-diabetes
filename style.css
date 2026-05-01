@@ -1,0 +1,153 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #eef6f8;
+  color: #1f2933;
+}
+
+.app {
+  max-width: 520px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 24px 18px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #087f8c;
+}
+
+header p {
+  color: #52616b;
+  font-size: 0.95rem;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.tab {
+  border: none;
+  padding: 12px 8px;
+  border-radius: 14px;
+  background: #d9edf1;
+  color: #087f8c;
+  font-weight: 700;
+}
+
+.tab.active {
+  background: #087f8c;
+  color: white;
+}
+
+.tab-content {
+  display: none;
+  background: white;
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.tab-content.active {
+  display: block;
+}
+
+h2 {
+  margin-top: 0;
+  color: #087f8c;
+}
+
+label {
+  display: block;
+  margin-top: 16px;
+  margin-bottom: 6px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #c7d8dd;
+  border-radius: 14px;
+  font-size: 1rem;
+}
+
+.primary {
+  width: 100%;
+  margin-top: 22px;
+  padding: 15px;
+  border: none;
+  border-radius: 16px;
+  background: #087f8c;
+  color: white;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.result {
+  margin-top: 22px;
+  padding: 18px;
+  border-radius: 18px;
+  background: #e6f7ee;
+  border: 1px solid #9bd8b5;
+}
+
+.result strong {
+  font-size: 2rem;
+  color: #087f5b;
+}
+
+.warning {
+  margin-bottom: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #fff4d6;
+  border: 1px solid #f0c36d;
+  color: #7a5200;
+  font-weight: 700;
+}
+
+.success {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #e6f7ee;
+  color: #087f5b;
+  font-weight: 700;
+}
+
+.card {
+  line-height: 1.55;
+}
+
+.formula {
+  padding: 14px;
+  background: #eef6f8;
+  border-radius: 14px;
+  font-weight: 800;
+}
+
+.note {
+  margin-top: 18px;
+  color: #8a4b00;
+  font-size: 0.9rem;
+}
+
+.hidden {
+  display: none;
+}

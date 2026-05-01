@@ -1,25 +1,98 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <link rel="manifest" href="./manifest.json">
-
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-
-  <meta charset="UTF-8">
-  <title>Mi PWA Diabetes</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora Fiasp</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Hola mundo</h1>
-  <p>Mi primera aplicación web para iPhone.</p>
+  <main class="app">
+    <header>
+      <h1>Calculadora de Fiasp</h1>
+      <p>Estimación orientativa de bolo usando carbohidratos, corrección e insulina activa.</p>
+    </header>
 
-  <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./service-worker.js")
-      .then(() => console.log("Service Worker registrado"))
-      .catch(error => console.error("Error registrando Service Worker:", error));
-  }
-</script>
+    <nav class="tabs">
+      <button class="tab active" data-tab="calculo">Cálculo</button>
+      <button class="tab" data-tab="formula">Fórmula</button>
+      <button class="tab" data-tab="perfil">Perfil</button>
+    </nav>
+
+    <section id="warning" class="warning hidden">
+      Faltan datos del perfil. Completa ICR, ISF y glucosa objetivo antes de calcular.
+    </section>
+
+    <section id="calculo" class="tab-content active">
+      <h2>Calcular dosis</h2>
+
+      <label>Glucosa actual (mg/dL)</label>
+      <input id="glucose" type="number" placeholder="Ej. 180" />
+
+      <label>Carbohidratos de la comida (g)</label>
+      <input id="carbs" type="number" placeholder="Ej. 60" />
+
+      <label>Insulina activa / IOB (U)</label>
+      <input id="iob" type="number" step="0.1" placeholder="Ej. 1.5" />
+
+      <button id="calculateBtn" class="primary">Calcular dosis</button>
+
+      <div id="result" class="result hidden"></div>
+    </section>
+
+    <section id="formula" class="tab-content">
+      <h2>Fórmula usada</h2>
+
+      <div class="card">
+        <p class="formula">
+          Dosis = carbohidratos / ICR + (glucosa actual - glucosa objetivo) / ISF - IOB
+        </p>
+
+        <p><strong>ICR:</strong> ratio insulina/carbohidratos. Indica cuántos gramos de hidratos cubre 1 unidad de insulina.</p>
+
+        <p><strong>ISF:</strong> factor de sensibilidad. Indica cuántos mg/dL baja aproximadamente 1 unidad de insulina.</p>
+
+        <p><strong>Glucosa objetivo:</strong> valor al que se quiere aproximar la glucemia.</p>
+
+        <p><strong>IOB:</strong> insulina activa residual de dosis previas. Se resta para reducir el riesgo de acumulación.</p>
+
+        <p class="note">
+          Esta calculadora no sustituye indicaciones médicas. Los parámetros deben ser definidos con el equipo sanitario.
+        </p>
+      </div>
+    </section>
+
+    <section id="perfil" class="tab-content">
+      <h2>Perfil del usuario</h2>
+
+      <label>Nombre</label>
+      <input id="profileName" type="text" placeholder="Opcional" />
+
+      <label>ICR: gramos de carbohidratos por 1 unidad</label>
+      <input id="profileICR" type="number" step="0.1" placeholder="Ej. 10" />
+
+      <label>ISF: bajada estimada por 1 unidad (mg/dL)</label>
+      <input id="profileISF" type="number" step="0.1" placeholder="Ej. 45" />
+
+      <label>Glucosa objetivo (mg/dL)</label>
+      <input id="profileTarget" type="number" placeholder="Ej. 110" />
+
+      <label>Incremento mínimo de dosis</label>
+      <select id="profileStep">
+        <option value="0.5">0.5 U</option>
+        <option value="1">1 U</option>
+        <option value="0.1">0.1 U</option>
+      </select>
+
+      <label>Dosis máxima recomendada por bolo (U)</label>
+      <input id="profileMaxDose" type="number" step="0.5" placeholder="Ej. 15" />
+
+      <button id="saveProfileBtn" class="primary">Guardar perfil</button>
+
+      <div id="profileSaved" class="success hidden">Perfil guardado correctamente.</div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
 </body>
 </html>
