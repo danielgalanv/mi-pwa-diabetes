@@ -210,15 +210,6 @@ async function fetchNightscout() {
   return data[0];
 }
 
-  const data = await res.json();
-
-  if (!data.length) {
-    throw new Error("Sin datos");
-  }
-
-  return data[0];
-}
-
 async function updateNightscout() {
   try {
     refreshBtn.disabled = true;
@@ -233,7 +224,7 @@ async function updateNightscout() {
     nsTrend.textContent = TREND_MAP[trend] || "?";
     nsUpdated.textContent = `Actualizado ${formatTime(entry.date)}`;
 
-    nsGlucose.className = `glucose-value ${getColorClass(glucose)}`;
+    nsGlucose.className = getColorClass(glucose);
   } catch (e) {
     console.error(e);
 
@@ -241,7 +232,7 @@ async function updateNightscout() {
     nsTrend.textContent = "!";
     nsUpdated.textContent = "Error al obtener datos";
 
-    nsGlucose.className = "glucose-value ns-unknown";
+    nsGlucose.className = "ns-unknown";
   } finally {
     refreshBtn.disabled = false;
     refreshBtn.textContent = "Actualizar datos";
@@ -250,12 +241,8 @@ async function updateNightscout() {
 
 if (refreshBtn) {
   refreshBtn.addEventListener("click", updateNightscout);
+  setInterval(updateNightscout, 60000);
+  updateNightscout();
 }
-
-/* Auto-refresh cada 60s */
-setInterval(updateNightscout, 60000);
-
-/* Primera carga */
-updateNightscout();
 
 initializeApp();
