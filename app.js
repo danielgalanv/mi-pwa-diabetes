@@ -11,7 +11,26 @@ const profileSaved = document.getElementById("profileSaved");
 const STORAGE_KEY = "fiasp_user_profile";
 
 function getProfile() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (!data) return null;
+
+    const parsed = JSON.parse(data);
+
+    // Validación mínima
+    if (
+      typeof parsed.icr !== "number" ||
+      typeof parsed.isf !== "number" ||
+      typeof parsed.target !== "number"
+    ) {
+      return null;
+    }
+
+    return parsed;
+  } catch (e) {
+    console.error("Error leyendo perfil:", e);
+    return null;
+  }
 }
 
 function saveProfile(profile) {
@@ -52,17 +71,17 @@ function loadProfileIntoForm() {
 }
 
 function initializeApp() {
-  loadProfileIntoForm();
-
   const profile = getProfile();
 
-  if (!isProfileComplete(profile)) {
+  if (!profile) {
     warning.classList.remove("hidden");
     openTab("perfil");
-  } else {
-    warning.classList.add("hidden");
-    openTab("calculo");
+    return;
   }
+
+  loadProfileIntoForm();
+  warning.classList.add("hidden");
+  openTab("calculo");
 }
 
 tabs.forEach(tab => {
@@ -219,6 +238,8 @@ async function updateNightscout() {
 
     const glucose = entry.sgv;
     const trend = entry.direction;
+
+    document.getElementById("glucose").value = glucose;
 
     nsGlucose.textContent = glucose;
     nsTrend.textContent = TREND_MAP[trend] || "?";
