@@ -239,7 +239,12 @@ async function updateNightscout() {
     const glucose = entry.sgv;
     const trend = entry.direction;
 
-    document.getElementById("glucose").value = glucose;
+    const glucoseInput = document.getElementById("glucose");
+
+    // Solo rellena si está vacío
+    if (!glucoseInput.value) {
+      glucoseInput.value = glucose;
+    }
 
     nsGlucose.textContent = glucose;
     nsTrend.textContent = TREND_MAP[trend] || "?";
