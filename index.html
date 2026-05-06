@@ -35,6 +35,20 @@
       <label>Glucosa actual (mg/dL)</label>
       <input id="glucose" type="number" placeholder="Ej. 180" />
 
+      <div id="trendBox" class="trend-box hidden"></div>
+
+      <label class="checkbox-row">
+        <input id="useTrendAdjustment" type="checkbox" checked />
+        Usar tendencia de Nightscout para ajustar la corrección
+      </label>
+
+      <label>Horizonte para tendencia</label>
+      <select id="trendHorizon">
+        <option value="30" selected>30 minutos</option>
+        <option value="45">45 minutos</option>
+        <option value="60">60 minutos</option>
+      </select>
+
       <label>Carbohidratos de la comida (g)</label>
       <input id="carbs" type="number" placeholder="Ej. 60" />
 
@@ -68,6 +82,8 @@
             <span id="nsUpdated">Sin datos</span>
           </div>
         </div>
+
+        <canvas id="nightscoutChart" width="460" height="220"></canvas>
 
         <button id="refreshNightscoutBtn" class="primary">
           Actualizar datos

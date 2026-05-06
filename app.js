@@ -141,8 +141,53 @@ calculateBtn.addEventListener("click", () => {
     return;
   }
 
+  const useTrendAdjustment =
+  document.getElementById("useTrendAdjustment")?.checked;
+
+  const trendHorizon =
+    Number(document.getElementById("trendHorizon")?.value) || 30;
+
   const mealBolus = carbs / profile.icr;
-  const correctionBolus = (glucose - profile.target) / profile.isf;
+
+  let correctionGlucose = glucose;
+  let trendAdjustmentUnits = 0;
+  let trendMessage = "";
+
+  if (useTrendAdjustment && latestTrendInfo && latestTrendInfo.valid) {
+    const predictedGlucose = predictGlucoseFromTrend(
+      glucose,
+      latestTrendInfo.rate,
+      trendHorizon
+    );
+
+    const rawTrendAdjustment =
+      (predictedGlucose - glucose) / profile.isf;
+
+    trendAdjustmentUnits = Math.max(
+      -MAX_TREND_ADJUSTMENT_UNITS,
+      Math.min(MAX_TREND_ADJUSTMENT_UNITS, rawTrendAdjustment)
+    );
+
+    correctionGlucose = glucose + trendAdjustmentUnits * profile.isf;
+
+    trendMessage = `
+      <p><b>Tendencia usada:</b> ${getTrendText(latestTrendInfo.rate)}
+      (${latestTrendInfo.rate.toFixed(2)} mg/dL/min)</p>
+      <p><b>Glucosa prevista a ${trendHorizon} min:</b>
+      ${Math.round(predictedGlucose)} mg/dL</p>
+      <p><b>Ajuste por tendencia aplicado:</b>
+      ${trendAdjustmentUnits.toFixed(2)} U</p>
+    `;
+  } else if (useTrendAdjustment && latestTrendInfo && !latestTrendInfo.valid) {
+    trendMessage = `
+      <p class="note">
+        No se ha usado la tendencia: ${latestTrendInfo.reason}
+      </p>
+    `;
+  }
+
+  const correctionBolus =
+    (correctionGlucose - profile.target) / profile.isf;
 
   let totalDose = mealBolus + correctionBolus - iob;
 
@@ -157,6 +202,23 @@ calculateBtn.addEventListener("click", () => {
 
   result.classList.remove("hidden");
 
+  const insulinEffectAt1hFraction = 0.45;
+  const carbEffectAt1hFraction = 0.55;
+
+  const insulinDropAt1h =
+    roundedDose * profile.isf * insulinEffectAt1hFraction;
+
+  const carbRiseAt1h =
+    carbs > 0 ? (carbs / profile.icr) * profile.isf * carbEffectAt1hFraction : 0;
+
+  const trendEffectAt1h =
+    latestTrendInfo && latestTrendInfo.valid
+      ? latestTrendInfo.rate * 60
+      : 0;
+
+  const estimatedGlucose1h =
+    glucose + carbRiseAt1h + trendEffectAt1h - insulinDropAt1h;
+
   result.innerHTML = `
     <p>Dosis estimada:</p>
     <strong>${roundedDose.toFixed(1)} U</strong>
@@ -166,6 +228,18 @@ calculateBtn.addEventListener("click", () => {
     <p><b>Bolo comida:</b> ${mealBolus.toFixed(2)} U</p>
     <p><b>Bolo corrección:</b> ${correctionBolus.toFixed(2)} U</p>
     <p><b>Insulina activa restada:</b> ${iob.toFixed(2)} U</p>
+
+    ${trendMessage}
+
+    <hr>
+
+    <p><b>Estimación de glucosa a 1 hora:</b></p>
+    <strong>${Math.round(estimatedGlucose1h)} mg/dL</strong>
+
+    <p class="note">
+      Esta predicción combina tendencia reciente, absorción parcial de carbohidratos
+      y efecto parcial estimado de Fiasp. Úsala solo como referencia.
+    </p>
 
     ${
       exceedsMax
@@ -185,6 +259,13 @@ calculateBtn.addEventListener("click", () => {
 ========================= */
 
 const NIGHTSCOUT_URL = "https://nightscout.intelligentcontrol.net";
+
+const NIGHTSCOUT_HISTORY_COUNT = 36; // unas 3 horas si hay dato cada 5 min
+const NIGHTSCOUT_MAX_AGE_MINUTES = 30;
+const MAX_TREND_ADJUSTMENT_UNITS = 1.5;
+
+let latestNightscoutEntries = [];
+let latestTrendInfo = null;
 
 const nsGlucose = document.getElementById("nsGlucose");
 const nsTrend = document.getElementById("nsTrend");
@@ -263,7 +344,9 @@ function showParamsResult(params) {
 
 
 async function fetchNightscout() {
-  const res = await fetch(`${NIGHTSCOUT_URL}/api/v1/entries.json?count=1`);
+  const res = await fetch(
+    `${NIGHTSCOUT_URL}/api/v1/entries.json?count=${NIGHTSCOUT_HISTORY_COUNT}`
+  );
 
   if (!res.ok) {
     throw new Error(`Error ${res.status}`);
@@ -275,23 +358,189 @@ async function fetchNightscout() {
     throw new Error("Sin datos");
   }
 
-  return data[0];
+  return data;
 }
+
+function minutesBetweenDates(a, b) {
+  return Math.abs(new Date(a) - new Date(b)) / (1000 * 60);
+}
+
+function getEntryGlucose(entry) {
+  return Number(entry.sgv || entry.glucose);
+}
+
+function calculateTrendInfo(entries) {
+  if (!entries || entries.length < 2) return null;
+
+  const sorted = [...entries].sort((a, b) => a.date - b.date);
+  const latest = sorted[sorted.length - 1];
+
+  const latestTime = new Date(latest.date);
+  const ageMinutes = (new Date() - latestTime) / (1000 * 60);
+
+  if (ageMinutes > NIGHTSCOUT_MAX_AGE_MINUTES) {
+    return {
+      valid: false,
+      reason: `Datos antiguos: ${Math.round(ageMinutes)} min desde la última lectura.`,
+      ageMinutes
+    };
+  }
+
+  const windowEntries = sorted.filter(entry => {
+    return minutesBetweenDates(entry.date, latest.date) <= 30;
+  });
+
+  if (windowEntries.length < 2) {
+    return {
+      valid: false,
+      reason: "No hay suficientes datos recientes para calcular tendencia.",
+      ageMinutes
+    };
+  }
+
+  const first = windowEntries[0];
+  const last = windowEntries[windowEntries.length - 1];
+
+  const glucoseDelta = getEntryGlucose(last) - getEntryGlucose(first);
+  const minutesDelta = (last.date - first.date) / (1000 * 60);
+
+  if (minutesDelta <= 0) {
+    return null;
+  }
+
+  const rate = glucoseDelta / minutesDelta;
+
+  return {
+    valid: true,
+    rate,
+    ageMinutes,
+    currentGlucose: getEntryGlucose(last),
+    latestDate: last.date
+  };
+}
+
+function predictGlucoseFromTrend(currentGlucose, trendRate, horizonMinutes) {
+  return currentGlucose + trendRate * horizonMinutes;
+}
+
+function getTrendText(rate) {
+  if (rate > 2) return "subida rápida";
+  if (rate > 1) return "subiendo";
+  if (rate < -2) return "bajada rápida";
+  if (rate < -1) return "bajando";
+  return "estable";
+}
+
+function updateTrendBox() {
+  const trendBox = document.getElementById("trendBox");
+  const horizonSelect = document.getElementById("trendHorizon");
+
+  if (!trendBox || !latestTrendInfo) return;
+
+  if (!latestTrendInfo.valid) {
+    trendBox.classList.remove("hidden");
+    trendBox.innerHTML = `
+      <strong>Tendencia no usada</strong>
+      <p>${latestTrendInfo.reason}</p>
+    `;
+    return;
+  }
+
+  const horizon = Number(horizonSelect?.value) || 30;
+  const predicted = predictGlucoseFromTrend(
+    latestTrendInfo.currentGlucose,
+    latestTrendInfo.rate,
+    horizon
+  );
+
+  trendBox.classList.remove("hidden");
+  trendBox.innerHTML = `
+    <strong>Tendencia Nightscout:</strong> ${getTrendText(latestTrendInfo.rate)}
+    <p>Velocidad: ${latestTrendInfo.rate.toFixed(2)} mg/dL/min</p>
+    <p>Predicción a ${horizon} min: <b>${Math.round(predicted)} mg/dL</b></p>
+  `;
+}
+
+function drawNightscoutChart(entries) {
+  const canvas = document.getElementById("nightscoutChart");
+  if (!canvas || !entries || entries.length < 2) return;
+
+  const ctx = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+  const padding = 34;
+
+  ctx.clearRect(0, 0, width, height);
+
+  const sorted = [...entries].sort((a, b) => a.date - b.date);
+  const values = sorted.map(getEntryGlucose);
+  const minValue = Math.min(...values, 70) - 10;
+  const maxValue = Math.max(...values, 180) + 10;
+
+  const minTime = sorted[0].date;
+  const maxTime = sorted[sorted.length - 1].date;
+
+  function xFor(entry) {
+    return padding + ((entry.date - minTime) / (maxTime - minTime)) * (width - padding * 2);
+  }
+
+  function yFor(value) {
+    return height - padding - ((value - minValue) / (maxValue - minValue)) * (height - padding * 2);
+  }
+
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "#d1d5db";
+
+  [70, 180].forEach(limit => {
+    const y = yFor(limit);
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(width - padding, y);
+    ctx.stroke();
+
+    ctx.fillStyle = "#6b7280";
+    ctx.fillText(`${limit}`, 6, y + 4);
+  });
+
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#087f8c";
+  ctx.beginPath();
+
+  sorted.forEach((entry, index) => {
+    const x = xFor(entry);
+    const y = yFor(getEntryGlucose(entry));
+
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+
+  ctx.stroke();
+
+  const last = sorted[sorted.length - 1];
+  ctx.fillStyle = "#087f8c";
+  ctx.beginPath();
+  ctx.arc(xFor(last), yFor(getEntryGlucose(last)), 5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 
 async function updateNightscout() {
   try {
     refreshBtn.disabled = true;
     refreshBtn.textContent = "Actualizando...";
 
-    const entry = await fetchNightscout();
+    const entries = await fetchNightscout();
+
+    latestNightscoutEntries = entries;
+    latestTrendInfo = calculateTrendInfo(entries);
+
+    const entry = entries[0];
 
     const glucose = entry.sgv;
     const trend = entry.direction;
 
     const glucoseInput = document.getElementById("glucose");
-
-    // Solo rellena si está vacío
-    if (!glucoseInput.value) {
+    if (glucoseInput && !glucoseInput.value) {
       glucoseInput.value = glucose;
     }
 
@@ -300,6 +549,10 @@ async function updateNightscout() {
     nsUpdated.textContent = `Actualizado ${formatTime(entry.date)}`;
 
     nsGlucose.className = getColorClass(glucose);
+
+    updateTrendBox();
+    drawNightscoutChart(entries);
+
   } catch (e) {
     console.error(e);
 

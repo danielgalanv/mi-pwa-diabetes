@@ -227,3 +227,33 @@ select {
 .bolus-item strong {
   color: #087f8c;
 }
+
+.trend-box {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #eef6f8;
+  border: 1px solid #c7d8dd;
+  font-size: 0.95rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  font-weight: 700;
+}
+
+.checkbox-row input {
+  width: auto;
+}
+
+#nightscoutChart {
+  width: 100%;
+  max-width: 100%;
+  margin: 16px 0;
+  background: #f8fafc;
+  border-radius: 16px;
+  border: 1px solid #dbeafe;
+}
