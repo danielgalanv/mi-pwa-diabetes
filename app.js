@@ -9,6 +9,7 @@ const saveProfileBtn = document.getElementById("saveProfileBtn");
 const profileSaved = document.getElementById("profileSaved");
 
 const STORAGE_KEY = "fiasp_user_profile";
+const PARAMS_STORAGE_KEY = "fiasp_icr_isf_params";
 
 function getProfile() {
   try {
@@ -80,6 +81,7 @@ function initializeApp() {
   }
 
   loadProfileIntoForm();
+  loadParamsIntoForm();
   warning.classList.add("hidden");
   openTab("calculo");
 }
@@ -213,6 +215,48 @@ function formatTime(ts) {
   });
 }
 
+
+function getSavedParams() {
+  return JSON.parse(localStorage.getItem(PARAMS_STORAGE_KEY)) || {};
+}
+
+function saveParams(params) {
+  localStorage.setItem(PARAMS_STORAGE_KEY, JSON.stringify(params));
+}
+
+function loadParamsIntoForm() {
+  const params = getSavedParams();
+
+  document.getElementById("dailyBasal").value = params.dailyBasal || "";
+  document.getElementById("breakfastBolus").value = params.breakfastBolus || "";
+  document.getElementById("lunchBolus").value = params.lunchBolus || "";
+  document.getElementById("dinnerBolus").value = params.dinnerBolus || "";
+  document.getElementById("otherBolus").value = params.otherBolus || "";
+
+  if (params.tdd && params.icr && params.isf) {
+    showParamsResult(params);
+  }
+}
+
+function showParamsResult(params) {
+  const paramsResult = document.getElementById("paramsResult");
+  const useParamsBtn = document.getElementById("useParamsBtn");
+
+  paramsResult.classList.remove("hidden");
+  useParamsBtn.classList.remove("hidden");
+
+  paramsResult.innerHTML = `
+    <p><b>Dosis total diaria estimada:</b> ${params.tdd.toFixed(1)} U</p>
+    <p><b>ICR estimado:</b> 1 U por cada ${params.icr.toFixed(1)} g de hidratos</p>
+    <p><b>ISF estimado:</b> 1 U baja aproximadamente ${params.isf.toFixed(1)} mg/dL</p>
+
+    <p class="note">
+      Guarda estos valores en el perfil solo si tienen sentido para tu caso y han sido validados clínicamente.
+    </p>
+  `;
+}
+
+
 async function fetchNightscout() {
   const res = await fetch(`${NIGHTSCOUT_URL}/api/v1/entries.json?count=1`);
 
@@ -269,6 +313,70 @@ if (refreshBtn) {
   refreshBtn.addEventListener("click", updateNightscout);
   setInterval(updateNightscout, 60000);
   updateNightscout();
+}
+
+const calculateParamsBtn = document.getElementById("calculateParamsBtn");
+const useParamsBtn = document.getElementById("useParamsBtn");
+
+if (calculateParamsBtn) {
+  calculateParamsBtn.addEventListener("click", () => {
+    const dailyBasal = Number(document.getElementById("dailyBasal").value) || 0;
+    const breakfastBolus = Number(document.getElementById("breakfastBolus").value) || 0;
+    const lunchBolus = Number(document.getElementById("lunchBolus").value) || 0;
+    const dinnerBolus = Number(document.getElementById("dinnerBolus").value) || 0;
+    const otherBolus = Number(document.getElementById("otherBolus").value) || 0;
+
+    const tdd =
+      dailyBasal +
+      breakfastBolus +
+      lunchBolus +
+      dinnerBolus +
+      otherBolus;
+
+    if (tdd <= 0) {
+      alert("Introduce al menos una dosis diaria válida.");
+      return;
+    }
+
+    const params = {
+      dailyBasal,
+      breakfastBolus,
+      lunchBolus,
+      dinnerBolus,
+      otherBolus,
+      tdd,
+      icr: 500 / tdd,
+      isf: 1800 / tdd
+    };
+
+    saveParams(params);
+    showParamsResult(params);
+  });
+}
+
+if (useParamsBtn) {
+  useParamsBtn.addEventListener("click", () => {
+    const params = getSavedParams();
+
+    if (!params.icr || !params.isf) {
+      alert("Primero calcula ICR e ISF.");
+      return;
+    }
+
+    const profile = getProfile();
+
+    const updatedProfile = {
+      ...profile,
+      icr: Number(params.icr.toFixed(1)),
+      isf: Number(params.isf.toFixed(1))
+    };
+
+    saveProfile(updatedProfile);
+    loadProfileIntoForm();
+
+    alert("ICR e ISF copiados al perfil.");
+    openTab("perfil");
+  });
 }
 
 initializeApp();

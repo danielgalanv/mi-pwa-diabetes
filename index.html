@@ -21,6 +21,7 @@
       <button class="tab" data-tab="nightscout">Nightscout</button>
       <button class="tab" data-tab="formula">Fórmula</button>
       <button class="tab" data-tab="perfil">Perfil</button>
+      <button class="tab" data-tab="parametros">ICR/ISF</button>
     </nav>
 
     <section id="warning" class="warning hidden">
@@ -120,6 +121,55 @@
 
       <div id="profileSaved" class="success hidden">Perfil guardado correctamente.</div>
     </section>
+
+    <section id="parametros" class="tab-content">
+      <h2>Estimación de ICR e ISF</h2>
+
+      <div class="card">
+        <p>
+          Esta herramienta estima el ratio insulina/carbohidratos y el factor de sensibilidad
+          a partir de la dosis total diaria de insulina.
+        </p>
+
+        <p class="formula">
+          TDD = basal diaria + bolos de comida + correcciones
+        </p>
+
+        <p class="formula">
+          ICR ≈ 500 / TDD
+        </p>
+
+        <p class="formula">
+          ISF ≈ 1800 / TDD
+        </p>
+
+        <p class="note">
+          Estos valores son orientativos y no sustituyen los indicados por el equipo sanitario.
+        </p>
+      </div>
+
+      <label>Insulina basal diaria total (U)</label>
+      <input id="dailyBasal" type="number" step="0.1" placeholder="Ej. 20" />
+
+      <label>Bolo desayuno medio (U)</label>
+      <input id="breakfastBolus" type="number" step="0.1" placeholder="Ej. 4" />
+
+      <label>Bolo comida medio (U)</label>
+      <input id="lunchBolus" type="number" step="0.1" placeholder="Ej. 6" />
+
+      <label>Bolo cena medio (U)</label>
+      <input id="dinnerBolus" type="number" step="0.1" placeholder="Ej. 5" />
+
+      <label>Otros bolos/correcciones diarios (U)</label>
+      <input id="otherBolus" type="number" step="0.1" placeholder="Ej. 2" />
+
+      <button id="calculateParamsBtn" class="primary">Calcular ICR e ISF</button>
+
+      <div id="paramsResult" class="result hidden"></div>
+
+      <button id="useParamsBtn" class="primary hidden">Usar estos valores en mi perfil</button>
+    </section>
+    
   </main>
 
   <script src="app.js"></script>

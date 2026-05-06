@@ -192,3 +192,10 @@ select {
 .ns-unknown {
   color: #6b7280;
 }
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
