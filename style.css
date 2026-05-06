@@ -199,3 +199,31 @@ select {
   gap: 8px;
   margin-bottom: 18px;
 }
+
+.secondary {
+  width: 100%;
+  margin-top: 12px;
+  padding: 13px;
+  border: 1px solid #087f8c;
+  border-radius: 16px;
+  background: white;
+  color: #087f8c;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.bolus-list {
+  margin-top: 14px;
+}
+
+.bolus-item {
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  background: #eef6f8;
+  border: 1px solid #c7d8dd;
+}
+
+.bolus-item strong {
+  color: #087f8c;
+}

@@ -10,6 +10,7 @@ const profileSaved = document.getElementById("profileSaved");
 
 const STORAGE_KEY = "fiasp_user_profile";
 const PARAMS_STORAGE_KEY = "fiasp_icr_isf_params";
+const BOLUS_STORAGE_KEY = "fiasp_bolus_history";
 
 function getProfile() {
   try {
@@ -69,6 +70,7 @@ function loadProfileIntoForm() {
   document.getElementById("profileTarget").value = profile.target || "";
   document.getElementById("profileStep").value = profile.step || "0.5";
   document.getElementById("profileMaxDose").value = profile.maxDose || "";
+  document.getElementById("insulinDuration").value = profile.insulinDuration || "4";
 }
 
 function initializeApp() {
@@ -82,6 +84,7 @@ function initializeApp() {
 
   loadProfileIntoForm();
   loadParamsIntoForm();
+  updateIOBDisplay();
   warning.classList.add("hidden");
   openTab("calculo");
 }
@@ -99,7 +102,9 @@ saveProfileBtn.addEventListener("click", () => {
     isf: Number(document.getElementById("profileISF").value),
     target: Number(document.getElementById("profileTarget").value),
     step: Number(document.getElementById("profileStep").value),
-    maxDose: Number(document.getElementById("profileMaxDose").value) || null
+    maxDose: Number(document.getElementById("profileMaxDose").value) || null,
+    insulinDuration: Number(document.getElementById("insulinDuration")?.value) || 4
+    
   };
 
   if (!isProfileComplete(profile)) {
@@ -378,5 +383,151 @@ if (useParamsBtn) {
     openTab("perfil");
   });
 }
+
+function getBoluses() {
+  return JSON.parse(localStorage.getItem(BOLUS_STORAGE_KEY)) || [];
+}
+
+function saveBoluses(boluses) {
+  localStorage.setItem(BOLUS_STORAGE_KEY, JSON.stringify(boluses));
+}
+
+function calculateBolusIOB(units, bolusTime, durationHours) {
+  const now = new Date();
+  const bolusDate = new Date(bolusTime);
+
+  const elapsedMs = now - bolusDate;
+  const elapsedHours = elapsedMs / (1000 * 60 * 60);
+
+  if (elapsedHours < 0) return 0;
+  if (elapsedHours >= durationHours) return 0;
+
+  const remainingFraction = 1 - elapsedHours / durationHours;
+
+  return units * remainingFraction;
+}
+
+function calculateTotalIOB() {
+  const profile = getProfile();
+  const durationHours = Number(profile.insulinDuration) || 4;
+  const boluses = getBoluses();
+
+  return boluses.reduce((total, bolus) => {
+    return total + calculateBolusIOB(bolus.units, bolus.time, durationHours);
+  }, 0);
+}
+
+function cleanExpiredBoluses() {
+  const profile = getProfile();
+  const durationHours = Number(profile.insulinDuration) || 4;
+
+  const activeBoluses = getBoluses().filter(bolus => {
+    return calculateBolusIOB(bolus.units, bolus.time, durationHours) > 0;
+  });
+
+  saveBoluses(activeBoluses);
+}
+
+function updateIOBDisplay() {
+  cleanExpiredBoluses();
+
+  const profile = getProfile();
+  const durationHours = Number(profile.insulinDuration) || 4;
+  const boluses = getBoluses();
+  const totalIOB = calculateTotalIOB();
+
+  const iobInput = document.getElementById("iob");
+  const iobResult = document.getElementById("iobResult");
+  const bolusList = document.getElementById("bolusList");
+
+  if (iobInput) {
+    iobInput.value = totalIOB.toFixed(1);
+  }
+
+  if (iobResult) {
+    iobResult.classList.remove("hidden");
+    iobResult.innerHTML = `
+      <p>Insulina activa estimada:</p>
+      <strong>${totalIOB.toFixed(1)} U</strong>
+      <p class="note">Duración configurada: ${durationHours} horas.</p>
+    `;
+  }
+
+  if (bolusList) {
+    if (!boluses.length) {
+      bolusList.innerHTML = `<p class="note">No hay bolos activos registrados.</p>`;
+      return;
+    }
+
+    bolusList.innerHTML = boluses
+      .map(bolus => {
+        const remaining = calculateBolusIOB(bolus.units, bolus.time, durationHours);
+        const date = new Date(bolus.time);
+
+        return `
+          <div class="bolus-item">
+            <strong>${bolus.units.toFixed(1)} U</strong>
+            <p>${date.toLocaleString("es-ES")}</p>
+            <p>IOB restante: ${remaining.toFixed(1)} U</p>
+          </div>
+        `;
+      })
+      .join("");
+  }
+}
+
+const addBolusBtn = document.getElementById("addBolusBtn");
+const clearBolusesBtn = document.getElementById("clearBolusesBtn");
+const openIobTabBtn = document.getElementById("openIobTabBtn");
+
+if (addBolusBtn) {
+  addBolusBtn.addEventListener("click", () => {
+    const units = Number(document.getElementById("bolusUnits").value);
+    const time = document.getElementById("bolusTime").value;
+    const duration = Number(document.getElementById("insulinDuration").value) || 4;
+
+    if (units <= 0 || !time) {
+      alert("Introduce unidades y fecha/hora del bolo.");
+      return;
+    }
+
+    const profile = getProfile();
+    saveProfile({
+      ...profile,
+      insulinDuration: duration
+    });
+
+    const boluses = getBoluses();
+
+    boluses.push({
+      units,
+      time
+    });
+
+    saveBoluses(boluses);
+
+    document.getElementById("bolusUnits").value = "";
+    document.getElementById("bolusTime").value = "";
+
+    updateIOBDisplay();
+  });
+}
+
+if (clearBolusesBtn) {
+  clearBolusesBtn.addEventListener("click", () => {
+    if (!confirm("¿Borrar todos los bolos registrados?")) return;
+
+    saveBoluses([]);
+    updateIOBDisplay();
+  });
+}
+
+if (openIobTabBtn) {
+  openIobTabBtn.addEventListener("click", () => {
+    openTab("iob");
+  });
+}
+
+setInterval(updateIOBDisplay, 60000);
 
 initializeApp();

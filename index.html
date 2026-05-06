@@ -22,6 +22,7 @@
       <button class="tab" data-tab="formula">Fórmula</button>
       <button class="tab" data-tab="perfil">Perfil</button>
       <button class="tab" data-tab="parametros">ICR/ISF</button>
+      <button class="tab" data-tab="iob">IOB</button>
     </nav>
 
     <section id="warning" class="warning hidden">
@@ -37,8 +38,12 @@
       <label>Carbohidratos de la comida (g)</label>
       <input id="carbs" type="number" placeholder="Ej. 60" />
 
-      <label>Insulina activa / IOB (U)</label>
-      <input id="iob" type="number" step="0.1" placeholder="Ej. 1.5" />
+      <label>Insulina activa estimada / IOB (U)</label>
+      <input id="iob" type="number" step="0.1" readonly placeholder="Calculada automáticamente" />
+
+      <button id="openIobTabBtn" class="secondary">
+        Calcular insulina activa
+      </button>
 
       <button id="calculateBtn" class="primary">Calcular dosis</button>
 
@@ -69,6 +74,43 @@
         </button>
       </div>
     </section>
+
+    <section id="iob" class="tab-content">
+  <h2>Insulina activa</h2>
+
+  <div class="card">
+    <p>
+      Registra las dosis recientes de insulina rápida para estimar cuánta insulina sigue activa.
+    </p>
+
+    <p class="formula">
+      IOB ≈ unidades × fracción restante de acción
+    </p>
+
+    <p class="note">
+      Este cálculo es una estimación simplificada. La acción real de la insulina no es perfectamente lineal.
+    </p>
+  </div>
+
+  <label>Duración de acción de la insulina rápida (horas)</label>
+  <input id="insulinDuration" type="number" step="0.5" placeholder="Ej. 4" />
+
+  <label>Unidades administradas</label>
+  <input id="bolusUnits" type="number" step="0.1" placeholder="Ej. 3.5" />
+
+  <label>Fecha y hora del bolo</label>
+  <input id="bolusTime" type="datetime-local" />
+
+  <button id="addBolusBtn" class="primary">Añadir bolo</button>
+
+  <div id="iobResult" class="result hidden"></div>
+
+  <h3>Bolos registrados</h3>
+  <div id="bolusList" class="bolus-list"></div>
+
+  <button id="clearBolusesBtn" class="secondary">Borrar bolos registrados</button>
+</section> 
+
 
     <section id="formula" class="tab-content">
       <h2>Fórmula usada</h2>
